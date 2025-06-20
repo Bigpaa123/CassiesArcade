@@ -12,6 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -19,7 +20,7 @@ jobs:
       - name: Compile sketch
         uses: wokwi/compile-sketch@v1
         with:
-          sketch-path: CassiesArcade1
+          sketch-path: . 
 
       - name: Upload binary
         uses: actions/upload-artifact@v3
