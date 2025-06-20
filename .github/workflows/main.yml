@@ -6,15 +6,19 @@ on:
       - '**/*.ino'
       - '**/*.cpp'
       - '**/*.h'
+  workflow_dispatch:  # Allows manual run
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Compile sketch
         uses: wokwi/compile-sketch@v1
         with:
-          sketch-path: .
+          sketch-path: CassiesArcade1  # 🔧 path to your actual folder
+
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
