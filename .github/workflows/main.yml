@@ -17,9 +17,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Arduino CLI
-        uses: arduino/setup-arduino-cli@7c3fd49702ba682f07e6d8c2c4b82a207f20849a  # commit hash to avoid tag resolution issues
+        uses: arduino/setup-arduino-cli@v1  # ✅ Use working stable tag
         with:
-          version: 0.35.2  # explicitly defined version
+          version: 0.35.2
 
       - name: Install ESP32 platform
         run: |
