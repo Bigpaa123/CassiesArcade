@@ -16,14 +16,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Arduino CLI
-        uses: arduino/setup-arduino-cli@v1  # ✅ Use working stable tag
-        with:
-          version: 0.35.2
+      - name: Install Arduino CLI manually
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          sudo mv ./bin/arduino-cli /usr/local/bin/
+          arduino-cli config init
+          arduino-cli core update-index
 
       - name: Install ESP32 platform
         run: |
-          arduino-cli core update-index
           arduino-cli core install esp32:esp32
 
       - name: Compile sketch
