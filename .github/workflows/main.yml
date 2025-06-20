@@ -1,12 +1,4 @@
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - '**/*.ino'
-      - '**/*.cpp'
-      - '**/*.h'
-  workflow_dispatch:  # Allows manual run
+workflow_dispatch:  # Allows manual run
 
 jobs:
   build:
