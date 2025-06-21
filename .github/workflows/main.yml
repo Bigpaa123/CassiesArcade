@@ -1,3 +1,10 @@
+name: Build ESP32 Firmware and SPIFFS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,16 +21,48 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp32:esp32
 
-      - name: Compile Sketch with Custom Partition
+      - name: Compile sketch
         run: |
           mkdir -p firmware
-          arduino-cli compile \
-            --fqbn esp32:esp32:esp32 \
+          arduino-cli compile --fqbn esp32:esp32:esp32 \
+            --output-dir ./firmware \
             --build-property build.partitions=partitions.csv \
-            --output-dir ./firmware CassiesArcade.ino
+            CassiesArcade.ino
 
-      - name: Upload Firmware
+      - name: Upload firmware binary
         uses: actions/upload-artifact@v4
         with:
           name: firmware
           path: ./firmware/*.bin
+
+  build-spiffs:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y g++ git make
+
+      - name: Build mkspiffs tool
+        run: |
+          git clone --recursive https://github.com/igrr/mkspiffs.git
+          cd mkspiffs
+          make
+          sudo cp mkspiffs /usr/local/bin/
+
+      - name: Create SPIFFS image
+        run: |
+          mkdir -p data
+          cp -v *.html *.css *.js data/ || true
+          mkspiffs -c data -b 4096 -p 256 -s 0x170000 spiffs.bin
+
+      - name: Upload SPIFFS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiffs
+          path: spiffs.bin
