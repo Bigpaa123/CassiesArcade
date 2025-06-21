@@ -6,7 +6,7 @@
 WebServer server(80);
 
 const char* ssid = "Cassies_Arcade";
-const char* password = "play1234"; // Leave blank ("") for open network
+const char* password = "play1234";
 
 String getContentType(const String& filename) {
   if (filename.endsWith(".html")) return "text/html";
@@ -23,7 +23,6 @@ String getContentType(const String& filename) {
 void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
-
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
     server.streamFile(file, getContentType(path));
@@ -35,22 +34,19 @@ void handleFileRequest() {
 
 void setup() {
   Serial.begin(115200);
-  delay(100);
+  delay(1000);
 
-  // Start Access Point
   WiFi.softAP(ssid, password);
   Serial.println("\n[WiFi] AP Started");
   Serial.print("[WiFi] IP Address: ");
   Serial.println(WiFi.softAPIP());
 
-  // Mount SPIFFS
   if (!SPIFFS.begin(true)) {
     Serial.println("[SPIFFS] Mount Failed");
     return;
   }
   Serial.println("[SPIFFS] Mounted successfully");
 
-  // Serve files on any request
   server.onNotFound(handleFileRequest);
   server.begin();
   Serial.println("[HTTP] Server Started");
@@ -59,4 +55,3 @@ void setup() {
 void loop() {
   server.handleClient();
 }
-
