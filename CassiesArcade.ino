@@ -6,25 +6,26 @@
 WebServer server(80);
 
 const char* ssid = "Cassies_Arcade";
-const char* password = "play1234";  // Leave empty for open network
+const char* password = "play1234"; // Leave blank ("") for open network
 
-// Determine MIME type
 String getContentType(const String& filename) {
   if (filename.endsWith(".html")) return "text/html";
   if (filename.endsWith(".css"))  return "text/css";
   if (filename.endsWith(".js"))   return "application/javascript";
   if (filename.endsWith(".png"))  return "image/png";
-  if (filename.endsWith(".jpg"))  return "image/jpeg";
+  if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
   if (filename.endsWith(".ico"))  return "image/x-icon";
+  if (filename.endsWith(".woff")) return "font/woff";
+  if (filename.endsWith(".ttf"))  return "font/ttf";
   return "text/plain";
 }
 
-void handleNotFound() {
+void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
 
   if (SPIFFS.exists(path)) {
-    File file = SPIFFS.open(path, FILE_READ);
+    File file = SPIFFS.open(path, "r");
     server.streamFile(file, getContentType(path));
     file.close();
   } else {
@@ -34,23 +35,25 @@ void handleNotFound() {
 
 void setup() {
   Serial.begin(115200);
+  delay(100);
 
   // Start Access Point
   WiFi.softAP(ssid, password);
-  Serial.println("WiFi AP Started");
-  Serial.print("IP Address: ");
+  Serial.println("\n[WiFi] AP Started");
+  Serial.print("[WiFi] IP Address: ");
   Serial.println(WiFi.softAPIP());
 
   // Mount SPIFFS
   if (!SPIFFS.begin(true)) {
-    Serial.println("SPIFFS Mount Failed");
+    Serial.println("[SPIFFS] Mount Failed");
     return;
   }
+  Serial.println("[SPIFFS] Mounted successfully");
 
-  // Setup catch-all route
-  server.onNotFound(handleNotFound);
+  // Serve files on any request
+  server.onNotFound(handleFileRequest);
   server.begin();
-  Serial.println("HTTP Server Started");
+  Serial.println("[HTTP] Server Started");
 }
 
 void loop() {
