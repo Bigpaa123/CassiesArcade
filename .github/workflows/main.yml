@@ -1,32 +1,35 @@
-name: build-spiffs
+name: Compile ESP32
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.ino'
+      - '**/*.cpp'
+      - '**/*.h'
 
 jobs:
-  build-spiffs:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Download mkspiffs binary
+      - name: Install Arduino CLI manually
         run: |
-          mkdir tools
-          wget https://github.com/espressif/arduino-esp32/releases/download/2.0.11/mkspiffs-2.0.11-linux-amd64.tar.gz -O tools/mkspiffs.tar.gz
-          tar -xzf tools/mkspiffs.tar.gz -C tools
-          chmod +x tools/mkspiffs-2.0.11-linux-amd64
-          mv tools/mkspiffs-2.0.11-linux-amd64 tools/mkspiffs
-
-      - name: Prepare SPIFFS image
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          sudo mv ./bin/arduino-cli /usr/local/bin/
+          arduino-cli config init
+          arduino-cli core update-index
+      - name: Install ESP32 platform
         run: |
-          mkdir -p data
-          cp *.html *.css data/
-          tools/mkspiffs -c data -b 4096 -p 256 -s 0x100000 spiffs.bin
-
-      - name: Upload SPIFFS binary
+          arduino-cli core install esp32:esp32
+      - name: Compile sketch
+        run: |
+          arduino-cli compile --fqbn esp32:esp32:esp32 CassiesArcade.ino
+      - name: Upload firmware binary
         uses: actions/upload-artifact@v4
         with:
-          name: CassiesArcadeSpiffs
-          path: spiffs.bin
+          name: firmware
+          path: ./build/**/*.bin
