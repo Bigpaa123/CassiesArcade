@@ -1,3 +1,4 @@
+
 name: Compile ESP32
 
 on:
@@ -27,9 +28,10 @@ jobs:
           arduino-cli core install esp32:esp32
       - name: Compile sketch
         run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32 CassiesArcade.ino
+          mkdir -p firmware
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir ./firmware CassiesArcade.ino
       - name: Upload firmware binary
         uses: actions/upload-artifact@v4
         with:
           name: firmware
-          path: ./build/**/*.bin
+          path: ./firmware/*.bin
