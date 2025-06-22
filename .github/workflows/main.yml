@@ -1,58 +1,52 @@
-name: Build ESP32 Firmware + SPIFFS
+name: Build ESP32 Firmware and SPIFFS
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repo
+    - name: 📥 Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Install Dependencies
+    - name: 📦 Install Arduino CLI
       run: |
-        sudo apt update
-        sudo apt install -y python3 python3-pip git make g++ wget
+        mkdir -p ./bin
+        curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz | tar -xz -C ./bin
+        ./bin/arduino-cli config init
 
-    - name: Set up Arduino CLI
+    - name: 📥 Install ESP32 Board Platform
       run: |
-        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-        echo "$HOME/.arduino15/bin" >> $GITHUB_PATH
-        arduino-cli core update-index
-        arduino-cli core install esp32:esp32
+        ./bin/arduino-cli core update-index
+        ./bin/arduino-cli core install esp32:esp32
 
-    - name: Compile Firmware
+    - name: 🔧 Compile Firmware
       run: |
-        arduino-cli compile \
-          --fqbn esp32:esp32:esp32 \
-          --output-dir build \
-          CassiesArcade.ino
+        ./bin/arduino-cli compile --fqbn esp32:esp32:esp32 CassiesArcade.ino
 
-    - name: Upload Firmware Binaries
-      uses: actions/upload-artifact@v4
+    - name: 📂 Create data folder for SPIFFS
+      run: |
+        mkdir -p data
+        cp -r ./data/* ./data/ 2>/dev/null || true
+
+    - name: 📦 Install Python SPIFFS Tool
+      run: |
+        pip install mkspiffs
+
+    - name: 🧱 Build SPIFFS
+      run: |
+        mkspiffs -c ./data -b 4096 -p 256 -s 0x190000 spiffs.bin
+
+    - name: 💾 Upload Binaries
+      uses: actions/upload-artifact@v3
       with:
-        name: firmware
+        name: esp32-binaries
         path: |
-          build/*.bin
-
-    - name: Clone mkspiffs
-      run: |
-        git clone --recursive https://github.com/igrr/mkspiffs.git
-        cd mkspiffs && make
-        sudo cp mkspiffs/mkspiffs /usr/local/bin/
-
-    - name: Build SPIFFS Binary
-      run: |
-        echo "📁 Contents of /data:"
-        ls -lh data
-        mkspiffs -c data -b 4096 -p 256 -s 0x170000 spiffs.bin
-
-    - name: Upload SPIFFS Binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: spiffs
-        path: spiffs.bin
+          CassiesArcade.ino.bin
+          CassiesArcade.ino.partitions.bin
+          CassiesArcade.ino.bootloader.bin
+          spiffs.bin
