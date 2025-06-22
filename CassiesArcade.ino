@@ -26,6 +26,8 @@ void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
 
+  Serial.println("[HTTP] Request for: " + path);
+
   String contentType = getContentType(path);
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
