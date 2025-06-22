@@ -1,41 +1,53 @@
-name: Build and Upload SPIFFS
+name: Build ESP32 Firmware and SPIFFS
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    paths:
+      - '**.ino'
+      - 'data/**'
+      - '**.html'
+      - '**.csv'
+      - '.github/workflows/**'
 
 jobs:
-  build-spiffs:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y g++ git make
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
-      - name: Build mkspiffs from Source
+      - name: Install ESP32 CLI tools
         run: |
-          git clone --recursive https://github.com/igrr/mkspiffs.git
-          cd mkspiffs
-          make
-          sudo cp mkspiffs /usr/local/bin/
+          pip install esptool
+          curl -fsSL https://github.com/earlephilhower/arduino-esp32fs-plugin/releases/download/2.0.0/esp32fs-linux64.zip -o esp32fs.zip
+          unzip esp32fs.zip
+          chmod +x esp32fs
+          sudo mv esp32fs /usr/local/bin/
 
-      - name: Prepare SPIFFS Folder
+      - name: Set up Arduino CLI
         run: |
-          mkdir -p spiffs
-          cp index.html spiffs/
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          mv bin/arduino-cli /usr/local/bin/
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
 
-      - name: Build SPIFFS Binary
+      - name: Compile firmware
         run: |
-          mkspiffs -c spiffs -b 4096 -p 256 -s 0x290000 build/spiffs.bin
+          arduino-cli compile --fqbn esp32:esp32:esp32 . --build-path ./build
 
-      - name: Upload SPIFFS Binary
+      - name: Build SPIFFS
+        run: |
+          esp32fs -c ./data -p ./build/spiffs.bin -b 0x290000 -s 0x170000
+
+      - name: Upload firmware binaries
         uses: actions/upload-artifact@v4
         with:
-          name: spiffs
-          path: build/spiffs.bin
+          name: firmware-binaries
+          path: |
+            build/*.bin
