@@ -37,9 +37,16 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp32:esp32
 
+      - name: Debug File Tree
+        run: ls -R
+
       - name: Compile firmware
         run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32 . --build-path ./build
+          mkdir -p build
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            CassiesArcade.ino \
+            --output-dir ./build
 
       - name: Build SPIFFS
         run: |
