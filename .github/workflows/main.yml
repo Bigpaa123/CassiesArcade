@@ -1,9 +1,9 @@
-
-name: Build Firmware and SPIFFS
+name: Build and Export ESP32 Firmware with SPIFFS
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -11,49 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install ESP32 toolchain
-        run: |
-          pip install esptool
 
       - name: Install Arduino CLI
         run: |
-          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          echo "$HOME/.arduino15/bin" >> $GITHUB_PATH
+          mkdir -p bin
+          curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz | tar -xz -C bin
+          echo "$(pwd)/bin" >> $GITHUB_PATH
+
+      - name: Install Platform & Libraries
+        run: |
           arduino-cli config init
           arduino-cli core update-index
           arduino-cli core install esp32:esp32
-          arduino-cli lib install "ESP Async WebServer"
-          arduino-cli lib install "FS"
-          arduino-cli lib install "SPIFFS"
-          arduino-cli lib install "WiFi"
+          arduino-cli lib install FS SPIFFS WiFi WebServer
 
-      - name: Compile firmware
+      - name: Compile Firmware
         run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32 ./CassiesArcade.ino --output-dir ./build
+          arduino-cli compile --fqbn esp32:esp32:esp32 \
+            --build-property build.partitions=partitions.csv \
+            --output-dir build .
 
-      - name: Clone and Build mkspiffs
+      - name: Prepare SPIFFS
         run: |
-          git clone --recursive https://github.com/igrr/mkspiffs.git
-          cd mkspiffs
-          make
-          sudo cp mkspiffs /usr/local/bin/
+          pip install mkspiffs
+          mkdir -p build/spiffs
+          cp -r data/* build/spiffs/
+          mkspiffs -c build/spiffs -b 4096 -p 256 -s 0x170000 build/spiffs.bin
 
-      - name: Build SPIFFS image
-        run: |
-          mkspiffs -c ./data -b 4096 -p 256 -s 0x170000 ./build/spiffs.bin
-          echo "✅ SPIFFS build complete"
-
-      - name: Upload firmware and SPIFFS as artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: firmware-and-spiffs
+          name: ESP32_Binaries
           path: |
-            ./build/*.bin
+            build/*.bin
+            build/spiffs.bin
