@@ -10,24 +10,31 @@ const char* password = "play1234";
 
 String getContentType(const String& filename) {
   if (filename.endsWith(".html")) return "text/html";
-  if (filename.endsWith(".css"))  return "text/css";
-  if (filename.endsWith(".js"))   return "application/javascript";
-  if (filename.endsWith(".png"))  return "image/png";
+  if (filename.endsWith(".css")) return "text/css";
+  if (filename.endsWith(".js")) return "application/javascript";
+  if (filename.endsWith(".png")) return "image/png";
   if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
-  if (filename.endsWith(".ico"))  return "image/x-icon";
+  if (filename.endsWith(".ico")) return "image/x-icon";
   if (filename.endsWith(".woff")) return "font/woff";
-  if (filename.endsWith(".ttf"))  return "font/ttf";
+  if (filename.endsWith(".ttf")) return "font/ttf";
+  if (filename.endsWith(".svg")) return "image/svg+xml";
+  if (filename.endsWith(".json")) return "application/json";
   return "text/plain";
 }
 
 void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
+
+  Serial.print("[HTTP] Request for: "); Serial.println(path);
+
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
     server.streamFile(file, getContentType(path));
     file.close();
+    Serial.println("[SPIFFS] Served successfully");
   } else {
+    Serial.println("[SPIFFS] File not found");
     server.send(404, "text/plain", "404: File Not Found");
   }
 }
