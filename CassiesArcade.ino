@@ -26,15 +26,15 @@ void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
 
-  Serial.print("[HTTP] Request for: "); Serial.println(path);
+  Serial.println("[HTTP] Requested path: " + path);  // 🔍 SEE what's requested
 
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
     server.streamFile(file, getContentType(path));
     file.close();
-    Serial.println("[SPIFFS] Served successfully");
+    Serial.println("[SPIFFS] Served successfully: " + path);
   } else {
-    Serial.println("[SPIFFS] File not found");
+    Serial.println("[SPIFFS] File not found: " + path);  // ❗SHOW missing file
     server.send(404, "text/plain", "404: File Not Found");
   }
 }
