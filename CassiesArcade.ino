@@ -22,20 +22,17 @@ String getContentType(const String& filename) {
   return "text/plain";
 }
 
-void handleFileRequest() {
+void handleNotFound() {
   String path = server.uri();
-  if (path == "/") path = "/index.html";  // default to index.html
+  if (path == "/") path = "/index.html";
 
-  Serial.println("[HTTP] Requested path: " + path);  // for debugging
-
+  String contentType = getContentType(path);
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
-    server.streamFile(file, getContentType(path));
+    server.streamFile(file, contentType);
     file.close();
-    Serial.println("[SPIFFS] File served: " + path);
   } else {
-    Serial.println("[SPIFFS] File not found: " + path);
-    server.send(404, "text/plain", "404: File Not Found");
+    server.send(404, "text/plain", "File Not Found: " + path);
   }
 }
 
