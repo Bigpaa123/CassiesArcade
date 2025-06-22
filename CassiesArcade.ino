@@ -50,8 +50,18 @@ void setup() {
   if (!SPIFFS.begin(true)) {
     Serial.println("[SPIFFS] Mount failed");
     return;
-  }
-  Serial.println("[SPIFFS] Mount successful");
+}
+Serial.println("[SPIFFS] Mount successful");
+
+// 🔽 Add this block to list all files 🔽
+Serial.println("[SPIFFS] Files found:");
+File root = SPIFFS.open("/");
+File file = root.openNextFile();
+while (file) {
+    Serial.println(file.name());
+    file = root.openNextFile();
+}
+// 🔼 Files will print in Serial Monitor
 
   server.onNotFound(handleFileRequest);
   server.begin();
