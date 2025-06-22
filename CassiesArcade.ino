@@ -24,7 +24,7 @@ String getContentType(const String& filename) {
 
 void handleFileRequest() {
   String path = server.uri();
-  if (path == "/") path = "/index.html";
+  if (path == "/") path = "/data/index.html";  // only if that's where it is
 
   Serial.println("[HTTP] Requested path: " + path);  // 🔍 SEE what's requested
 
