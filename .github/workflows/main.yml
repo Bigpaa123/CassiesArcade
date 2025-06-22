@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python and install esptool
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
@@ -30,19 +30,27 @@ jobs:
           chmod +x esp32fs
           sudo mv esp32fs /usr/local/bin/
 
-      - name: Install Arduino CLI and ESP32 Core
+      - name: Install Arduino CLI and ESP32 core
         run: |
           curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz -o arduino-cli.tar.gz
           tar -xzf arduino-cli.tar.gz
           sudo mv arduino-cli /usr/local/bin/
+
+          # Init config and add esp32 board manager URL
           arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          
+          # Install esp32 platform
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@2.0.14
 
       - name: Compile firmware
         run: |
           mkdir -p build
-          arduino-cli compile --fqbn esp32:esp32:esp32 CassiesArcade.ino --output-dir ./build
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32 \
+            CassiesArcade.ino \
+            --output-dir ./build
 
       - name: Build SPIFFS
         run: |
