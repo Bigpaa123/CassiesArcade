@@ -24,17 +24,17 @@ String getContentType(const String& filename) {
 
 void handleFileRequest() {
   String path = server.uri();
-  if (path == "/") path = "/data/index.html";  // only if that's where it is
+  if (path == "/") path = "/index.html";  // default to index.html
 
-  Serial.println("[HTTP] Requested path: " + path);  // 🔍 SEE what's requested
+  Serial.println("[HTTP] Requested path: " + path);  // for debugging
 
   if (SPIFFS.exists(path)) {
     File file = SPIFFS.open(path, "r");
     server.streamFile(file, getContentType(path));
     file.close();
-    Serial.println("[SPIFFS] Served successfully: " + path);
+    Serial.println("[SPIFFS] File served: " + path);
   } else {
-    Serial.println("[SPIFFS] File not found: " + path);  // ❗SHOW missing file
+    Serial.println("[SPIFFS] File not found: " + path);
     server.send(404, "text/plain", "404: File Not Found");
   }
 }
@@ -44,19 +44,19 @@ void setup() {
   delay(1000);
 
   WiFi.softAP(ssid, password);
-  Serial.println("\n[WiFi] AP Started");
+  Serial.println("\n[WiFi] Access Point Started");
   Serial.print("[WiFi] IP Address: ");
   Serial.println(WiFi.softAPIP());
 
   if (!SPIFFS.begin(true)) {
-    Serial.println("[SPIFFS] Mount Failed");
+    Serial.println("[SPIFFS] Mount failed");
     return;
   }
-  Serial.println("[SPIFFS] Mounted successfully");
+  Serial.println("[SPIFFS] Mount successful");
 
   server.onNotFound(handleFileRequest);
   server.begin();
-  Serial.println("[HTTP] Server Started");
+  Serial.println("[HTTP] Server started");
 }
 
 void loop() {
