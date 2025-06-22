@@ -22,7 +22,7 @@ String getContentType(const String& filename) {
   return "text/plain";
 }
 
-void handleNotFound() {
+void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
 
