@@ -42,7 +42,7 @@ jobs:
         mkspiffs -c ./data -b 4096 -p 256 -s 0x190000 spiffs.bin
 
     - name: 💾 Upload Binaries
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: esp32-binaries
         path: |
