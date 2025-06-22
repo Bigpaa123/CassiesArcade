@@ -17,28 +17,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python and install esptool
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: Install ESP32 CLI tools
-        run: |
+      - run: |
           pip install esptool
           curl -fsSL https://github.com/earlephilhower/arduino-esp32fs-plugin/releases/download/2.0.0/esp32fs-linux64.zip -o esp32fs.zip
           unzip esp32fs.zip
           chmod +x esp32fs
           sudo mv esp32fs /usr/local/bin/
 
-      - name: Set up Arduino CLI
+      - name: Install Arduino CLI
         run: |
-          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          mv bin/arduino-cli /usr/local/bin/
+          curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz -o arduino-cli.tar.gz
+          tar -xzf arduino-cli.tar.gz
+          sudo mv arduino-cli /usr/local/bin/
+          arduino-cli config init
           arduino-cli core update-index
           arduino-cli core install esp32:esp32
-
-      - name: Debug File Tree
-        run: ls -R
 
       - name: Compile firmware
         run: |
@@ -56,5 +54,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: firmware-binaries
-          path: |
-            build/*.bin
+          path: build/*.bin
