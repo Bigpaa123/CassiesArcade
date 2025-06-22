@@ -31,10 +31,8 @@ jobs:
           curl -fsSL https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Linux_64bit.tar.gz -o arduino-cli.tar.gz
           tar -xzf arduino-cli.tar.gz
           sudo mv arduino-cli /usr/local/bin/
-
           arduino-cli config init
           arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@2.0.14
 
@@ -51,8 +49,8 @@ jobs:
           mkdir -p build
           curl -LO https://github.com/igrr/mkspiffs/releases/download/0.2.3/mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
           tar -xzf mkspiffs-0.2.3-arduino-esp32-linux64.tar.gz
-          chmod +x mkspiffs
-          ./mkspiffs -c data -b 4096 -p 256 -s 0x170000 build/spiffs.bin
+          chmod +x mkspiffs-0.2.3-arduino-esp32-linux64/mkspiffs
+          ./mkspiffs-0.2.3-arduino-esp32-linux64/mkspiffs -c data -b 4096 -p 256 -s 0x170000 build/spiffs.bin
 
       - name: Upload firmware binaries
         uses: actions/upload-artifact@v4
