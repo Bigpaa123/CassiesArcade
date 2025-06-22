@@ -22,18 +22,37 @@ String getContentType(const String& filename) {
   return "text/plain";
 }
 
+void listSPIFFSFiles() {
+  Serial.println("[SPIFFS] Listing files:");
+  File root = SPIFFS.open("/");
+  File file = root.openNextFile();
+
+  if (!file) {
+    Serial.println("[SPIFFS] No files found.");
+  }
+
+  while (file) {
+    Serial.println("[SPIFFS] File: " + String(file.name()));
+    file = root.openNextFile();
+  }
+}
+
 void handleFileRequest() {
   String path = server.uri();
   if (path == "/") path = "/index.html";
 
-  Serial.println("[HTTP] Request for: " + path);
+  Serial.println("[HTTP] Requested path: " + path);
 
   String contentType = getContentType(path);
+
   if (SPIFFS.exists(path)) {
+    Serial.println("[SPIFFS] File found: " + path);
     File file = SPIFFS.open(path, "r");
     server.streamFile(file, contentType);
     file.close();
   } else {
+    Serial.println("[SPIFFS] File NOT found: " + path);
+    listSPIFFSFiles(); // Show all files currently in SPIFFS
     server.send(404, "text/plain", "File Not Found: " + path);
   }
 }
@@ -47,25 +66,17 @@ void setup() {
   Serial.print("[WiFi] IP Address: ");
   Serial.println(WiFi.softAPIP());
 
+  Serial.println("[SPIFFS] Attempting to mount...");
   if (!SPIFFS.begin(true)) {
-    Serial.println("[SPIFFS] Mount failed");
+    Serial.println("[SPIFFS] Mount FAILED");
     return;
-}
-Serial.println("[SPIFFS] Mount successful");
-
-// 🔽 Add this block to list all files 🔽
-Serial.println("[SPIFFS] Files found:");
-File root = SPIFFS.open("/");
-File file = root.openNextFile();
-while (file) {
-    Serial.println(file.name());
-    file = root.openNextFile();
-}
-// 🔼 Files will print in Serial Monitor
+  }
+  Serial.println("[SPIFFS] Mount SUCCESSFUL");
+  listSPIFFSFiles();
 
   server.onNotFound(handleFileRequest);
   server.begin();
-  Serial.println("[HTTP] Server started");
+  Serial.println("[HTTP] Server Started");
 }
 
 void loop() {
