@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python and install esptool
         uses: actions/setup-python@v4
@@ -43,6 +45,14 @@ jobs:
             --fqbn esp32:esp32:esp32 \
             CassiesArcade.ino \
             --output-dir ./build
+
+      - name: List repo files
+        run: |
+          ls -la
+
+      - name: List data folder contents
+        run: |
+          ls -la data
 
       - name: Build SPIFFS with mkspiffs
         run: |
