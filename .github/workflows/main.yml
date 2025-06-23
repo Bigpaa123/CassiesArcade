@@ -19,14 +19,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: List repo files
+        run: ls -la
+
+      - name: List data folder contents
+        run: ls -la data
+
       - name: Set up Python and install esptool
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
       - name: Install esptool
-        run: |
-          pip install esptool
+        run: pip install esptool
 
       - name: Install Arduino CLI and ESP32 core
         run: |
@@ -45,14 +50,6 @@ jobs:
             --fqbn esp32:esp32:esp32 \
             CassiesArcade.ino \
             --output-dir ./build
-
-      - name: List repo files
-        run: |
-          ls -la
-
-      - name: List data folder contents
-        run: |
-          ls -la data
 
       - name: Build SPIFFS with mkspiffs
         run: |
