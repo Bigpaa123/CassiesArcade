@@ -25,14 +25,18 @@ String getContentType(const String& filename) {
 void listSPIFFSFiles() {
   Serial.println("[SPIFFS] Listing files:");
   File root = SPIFFS.open("/");
-  File file = root.openNextFile();
+  if (!root) {
+    Serial.println("[SPIFFS] Failed to open root directory.");
+    return;
+  }
 
+  File file = root.openNextFile();
   if (!file) {
     Serial.println("[SPIFFS] No files found.");
   }
 
   while (file) {
-    Serial.println("[SPIFFS] File: " + String(file.name()));
+    Serial.println("[SPIFFS] File: " + String(file.name()) + " | Size: " + String(file.size()) + " bytes");
     file = root.openNextFile();
   }
 }
@@ -72,6 +76,8 @@ void setup() {
     return;
   }
   Serial.println("[SPIFFS] Mount SUCCESSFUL");
+  Serial.printf("[SPIFFS] Total size: %d bytes\n", SPIFFS.totalBytes());
+  Serial.printf("[SPIFFS] Used size: %d bytes\n", SPIFFS.usedBytes());
   listSPIFFSFiles();
 
   server.onNotFound(handleFileRequest);
