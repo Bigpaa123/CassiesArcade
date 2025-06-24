@@ -5,7 +5,7 @@
 
 WebServer server(80);
 
-const char* ssid = "Cassies_Arcade";
+const char* ssid = "Big_Joe's_Arcade";
 const char* password = "play1234";
 
 String getContentType(const String& filename) {
