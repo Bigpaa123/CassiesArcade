@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubble Pop</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #f0f8ff;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1.2em;
+      color: #222;
+      z-index: 10;
+    }
+    .back-button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      z-index: 20;
+    }
+    .back-button:hover {
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui">
+    ❤️ Lives: <span id="lives">5</span><br>
+    🏆 Score: <span id="score">0</span><br>
+    🧠 High Score: <span id="highScore">0</span>
+  </div>
+
+  <canvas id="game"></canvas>
+
+  <a href="index.html" class="back-button">🏠 Back to Arcade</a>
+
+  <script>
+    window.onload = function () {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let lives, score, spawnRate, balloons;
+      const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e67e22'];
+      let highScore = parseInt(localStorage.getItem('bubbleHighScore')) || 0;
+
+      document.getElementById('highScore').innerText = highScore;
+
+      function resetGame() {
+        lives = 5;
+        score = 0;
+        spawnRate = 1200;
+        balloons = [];
+
+        document.getElementById('lives').innerText = lives;
+        document.getElementById('score').innerText = score;
+
+        spawnLoop();
+        update();
+      }
+
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      function createBalloon() {
+        const radius = randomInt(20, 60);
+        const speed = 80 / radius;
+        const color = colors[randomInt(0, colors.length - 1)];
+
+        balloons.push({
+          x: randomInt(radius, canvas.width - radius),
+          y: canvas.height + radius,
+          r: radius,
+          speed: speed,
+          color: color,
+          clicked: false,
+          points: radius < 30 ? 5 : 1
+        });
+      }
+
+      function drawBalloon(b) {
+        ctx.beginPath();
+        ctx.fillStyle = b.color;
+        ctx.ellipse(b.x, b.y, b.r * 0.8, b.r, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y + b.r);
+        ctx.lineTo(b.x, b.y + b.r + 25);
+        ctx.strokeStyle = '#555';
+        ctx.stroke();
+      }
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        balloons.forEach(b => {
+          b.y -= b.speed;
+          drawBalloon(b);
+        });
+
+        for (let i = balloons.length - 1; i >= 0; i--) {
+          if (balloons[i].clicked || balloons[i].y + balloons[i].r < -50) {
+            balloons.splice(i, 1);
+          }
+        }
+
+        if (lives > 0) {
+          requestAnimationFrame(update);
+        } else {
+          if (score > highScore) {
+            localStorage.setItem('bubbleHighScore', score);
+            highScore = score;
+            document.getElementById('highScore').innerText = highScore;
+          }
+
+          ctx.fillStyle = '#000';
+          ctx.font = '2.5em Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Game Over! Score: ' + score, canvas.width / 2, canvas.height / 2);
+
+          setTimeout(resetGame, 3000);
+        }
+      }
+
+      function spawnLoop() {
+        if (lives <= 0) return;
+
+        createBalloon();
+        spawnRate = Math.max(400, spawnRate - 5);
+        setTimeout(spawnLoop, spawnRate);
+      }
+
+      canvas.addEventListener('touchstart', e => {
+        const touch = e.touches[0];
+        const x = touch.clientX;
+        const y = touch.clientY;
+
+        let hit = false;
+
+        for (let b of balloons) {
+          if (!b.clicked) {
+            const dx = x - b.x;
+            const dy = y - b.y;
+            const distance = Math.sqrt(dx * dx + dy * dy * 1.5);
+            if (distance < b.r) {
+              b.clicked = true;
+              score += b.points;
+              document.getElementById('score').innerText = score;
+              hit = true;
+
+              // Play pop sound
+              try {
+                const popSound = new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg');
+                popSound.play();
+              } catch (e) {
+                console.warn('Sound failed:', e);
+              }
+              break;
+            }
+          }
+        }
+
+        if (!hit) {
+          lives--;
+          document.getElementById('lives').innerText = lives;
+        }
+      });
+
+      resetGame();
+    };
+  </script>
+</body>
+</html>

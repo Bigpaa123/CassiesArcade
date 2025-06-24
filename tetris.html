@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tetris - Big Joe's Arcade</title>
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle, #0f0f0f, #000000);
+      font-family: 'Press Start 2P', Arial, sans-serif;
+      color: #ffffff;
+      text-align: center;
+      overflow: hidden;
+    }h1 {
+  margin-top: 20px;
+  color: #00ffcc;
+  animation: bounce 1.5s infinite alternate;
+  text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+}
+
+#gameContainer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+#tetrisCanvas {
+  background: #222;
+  border: 4px solid #00ffcc;
+  width: 180px;
+  height: 300px;
+}
+
+#infoPanel {
+  margin-left: 10px;
+  text-align: left;
+  font-size: 14px;
+}
+
+#scoreDisplay, #highScoreDisplay, #levelDisplay {
+  margin: 10px 0;
+}
+
+#nextCanvas {
+  background: #333;
+  border: 2px solid #00ffcc;
+  margin-top: 10px;
+  width: 60px;
+  height: 60px;
+}
+
+#controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.control-button {
+  background-color: #ff4081;
+  color: white;
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.control-button:hover {
+  background-color: #e91e63;
+}
+
+.back-button {
+  display: inline-block;
+  background-color: #ff4081;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background-color: #e91e63;
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+canvas.firework {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+  </style>
+</head>
+<body><h1>🧩 Tetris 🧩</h1>
+<div id="gameContainer">
+  <canvas id="tetrisCanvas" width="180" height="300"></canvas>
+  <div id="infoPanel">
+    <div id="scoreDisplay">Score: 0</div>
+    <div id="highScoreDisplay">High Score: 0</div>
+    <div id="levelDisplay">Level: 1</div>
+    <div>Next:</div>
+    <canvas id="nextCanvas" width="60" height="60"></canvas>
+  </div>
+</div><div id="controls">
+  <button class="control-button" id="leftBtn">⬅️</button>
+  <button class="control-button" id="downBtn">⬇️</button>
+  <button class="control-button" id="rightBtn">➡️</button>
+  <button class="control-button" id="rotateBtn">🔄</button>
+</div><a href="index.html" class="back-button">🏠 Back to Arcade</a><audio id="bgMusic" src="https://freesound.org/data/previews/413/413854_5121236-lq.mp3" loop autoplay></audio> <canvas id="fireworksCanvas" class="firework"></canvas>
+
+<script>
+  const canvas = document.getElementById('tetrisCanvas');
+  const context = canvas.getContext('2d');
+  context.scale(15, 15);
+
+  const nextCanvas = document.getElementById('nextCanvas');
+  const nextContext = nextCanvas.getContext('2d');
+  nextContext.scale(15, 15);
+
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const highScoreDisplay = document.getElementById('highScoreDisplay');
+  const levelDisplay = document.getElementById('levelDisplay');
+
+  let score = 0;
+  let level = 1;
+  let highScore = parseInt(localStorage.getItem('tetrisHighScore')) || 0;
+  highScoreDisplay.innerText = 'High Score: ' + highScore;
+
+  let dropCounter = 0;
+  let dropInterval = 1000;
+
+  let lastTime = 0;
+
+  let softDropInterval = null;
+
+  const colors = [
+    null,
+    '#ff0d72', '#0dc2ff', '#0dff72', '#f538ff', '#ff8e0d', '#ffe138', '#3877ff'
+  ];
+
+  const arena = createMatrix(12, 20);
+
+  const player = {
+    pos: { x: 0, y: 0 },
+    matrix: null,
+    next: null
+  };
+
+  const fireworksCanvas = document.getElementById('fireworksCanvas');
+  fireworksCanvas.width = window.innerWidth;
+  fireworksCanvas.height = window.innerHeight;
+  const fireworksCtx = fireworksCanvas.getContext('2d');
+
+  function createMatrix(w, h) {
+    const matrix = [];
+    while (h--) {
+      matrix.push(new Array(w).fill(0));
+    }
+    return matrix;
+  }
+
+  function createPiece(type) {
+    if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
+    if (type === 'O') return [[2,2],[2,2]];
+    if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
+    if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
+    if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
+    if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
+    if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
+  }
+
+  function playerReset() {
+    if (!player.next) {
+      player.next = randomPiece();
+    }
+    player.matrix = player.next;
+    player.next = randomPiece();
+    player.pos.y = 0;
+    player.pos.x = Math.floor(arena[0].length / 2) - Math.floor(player.matrix[0].length / 2);
+    drawNext();
+    if (collide(arena, player)) {
+      arena.forEach(row => row.fill(0));
+      score = 0;
+      level = 1;
+      dropInterval = 1000;
+      updateScore();
+    }
+  }
+
+  function randomPiece() {
+    const pieces = 'TJLOSZI';
+    return createPiece(pieces[Math.floor(Math.random() * pieces.length)]);
+  }
+
+  function drawNext() {
+    nextContext.fillStyle = '#000';
+    nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+    drawMatrix(player.next, { x: 1, y: 1 }, nextContext);
+  }
+
+  function drawMatrix(matrix, offset, ctx = context) {
+    matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          ctx.fillStyle = colors[value];
+          ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+        }
+      });
+    });
+  }
+
+  function collide(arena, player) {
+    const [m, o] = [player.matrix, player.pos];
+    for (let y = 0; y < m.length; ++y) {
+      for (let x = 0; x < m[y].length; ++x) {
+        if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function merge(arena, player) {
+    player.matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          arena[y + player.pos.y][x + player.pos.x] = value;
+        }
+      });
+    });
+  }
+
+  function arenaSweep() {
+    let rowCount = 1;
+    let linesCleared = 0;
+    outer: for (let y = arena.length - 1; y >= 0; --y) {
+      for (let x = 0; x < arena[y].length; ++x) {
+        if (arena[y][x] === 0) {
+          continue outer;
+        }
+      }
+
+      const row = arena.splice(y, 1)[0].fill(0);
+      arena.unshift(row);
+      ++y;
+
+      score += rowCount * 10;
+      rowCount *= 2;
+      linesCleared++;
+    }
+
+    if (linesCleared === 4) {
+      score += 30; // Tetris bonus
+      triggerFireworks();
+    }
+
+    updateScore();
+  }
+
+  function triggerFireworks() {
+    const x = Math.random() * fireworksCanvas.width;
+    const y = Math.random() * fireworksCanvas.height;
+    fireworksCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    fireworksCtx.beginPath();
+    fireworksCtx.arc(x, y, 50, 0, Math.PI * 2);
+    fireworksCtx.fill();
+
+    setTimeout(() => {
+      fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    }, 300);
+  }
+
+  function playerDrop() {
+    player.pos.y++;
+    if (collide(arena, player)) {
+      player.pos.y--;
+      merge(arena, player);
+      playerReset();
+      arenaSweep();
+    }
+    dropCounter = 0;
+  }
+
+  function playerSoftDrop() {
+    playerDrop();
+    dropCounter = 0;
+  }
+
+  function playerMove(dir) {
+    player.pos.x += dir;
+    if (collide(arena, player)) {
+      player.pos.x -= dir;
+    }
+  }
+
+  function playerRotate(dir) {
+    const pos = player.pos.x;
+    let offset = 1;
+    rotate(player.matrix, dir);
+    while (collide(arena, player)) {
+      player.pos.x += offset;
+      offset = -(offset + (offset > 0 ? 1 : -1));
+      if (offset > player.matrix[0].length) {
+        rotate(player.matrix, -dir);
+        player.pos.x = pos;
+        return;
+      }
+    }
+  }
+
+  function rotate(matrix, dir) {
+    for (let y = 0; y < matrix.length; ++y) {
+      for (let x = 0; x < y; ++x) {
+        [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+      }
+    }
+    if (dir > 0) {
+      matrix.forEach(row => row.reverse());
+    } else {
+      matrix.reverse();
+    }
+  }
+
+  function updateScore() {
+    scoreDisplay.innerText = 'Score: ' + score;
+    levelDisplay.innerText = 'Level: ' + level;
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('tetrisHighScore', highScore);
+      highScoreDisplay.innerText = 'High Score: ' + highScore;
+    }
+
+    if (score >= level * 100) {
+      level++;
+      dropInterval = Math.max(200, dropInterval - 100);
+    }
+  }
+
+  function update(time = 0) {
+    const deltaTime = time - lastTime;
+    lastTime = time;
+
+    dropCounter += deltaTime;
+    if (dropCounter > dropInterval) {
+      playerDrop();
+    }
+
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    drawMatrix(arena, { x: 0, y: 0 });
+    drawMatrix(player.matrix, player.pos);
+
+    requestAnimationFrame(update);
+  }
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'ArrowLeft') playerMove(-1);
+    else if (event.key === 'ArrowRight') playerMove(1);
+    else if (event.key === 'ArrowDown') playerSoftDrop();
+    else if (event.key === 'ArrowUp') playerRotate(1);
+  });
+
+  document.getElementById('leftBtn').addEventListener('click', () => playerMove(-1));
+  document.getElementById('rightBtn').addEventListener('click', () => playerMove(1));
+  document.getElementById('rotateBtn').addEventListener('click', () => playerRotate(1));
+
+  const downBtn = document.getElementById('downBtn');
+  downBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    downBtn.blur();
+    if (!softDropInterval) {
+      softDropInterval = setInterval(playerSoftDrop, 100);
+    }
+  });
+
+  downBtn.addEventListener('pointerup', () => {
+    clearInterval(softDropInterval);
+    softDropInterval = null;
+    downBtn.blur();
+  });
+
+  downBtn.addEventListener('pointerleave', () => {
+    clearInterval(softDropInterval);
+    softDropInterval = null;
+    downBtn.blur();
+  });
+
+  playerReset();
+  updateScore();
+  update();
+</script></body></html>

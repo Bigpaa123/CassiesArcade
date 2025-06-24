@@ -1,0 +1,173 @@
+<!-- BIG JOE'S ARCADE - simon.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simon Says - Big Joe's Arcade</title>
+  <style>
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 10px;
+    }
+    h1 {
+      color: #00ffcc;
+      margin-top: 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    .game-board {
+      display: grid;
+      grid-template-columns: 150px 150px;
+      grid-gap: 20px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .pad {
+      width: 150px;
+      height: 150px;
+      border-radius: 15px;
+      cursor: pointer;
+      opacity: 0.7;
+      box-shadow: 0 0 10px #000000;
+      transition: all 0.2s;
+    }
+    .pad.active {
+      opacity: 1;
+      box-shadow: 0 0 40px 15px white;
+    }
+    .red { background-color: #ff4c4c; }
+    .green { background-color: #4cff4c; }
+    .blue { background-color: #4c4cff; }
+    .yellow { background-color: #ffff4c; }
+
+    .button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧠 Simon Says 🧠</h1>
+  <h2 id="level">Level: 1</h2>
+  <h2 id="highScore">High Score: 1</h2>
+
+  <div class="game-board">
+    <div class="pad red" id="red"></div>
+    <div class="pad green" id="green"></div>
+    <div class="pad blue" id="blue"></div>
+    <div class="pad yellow" id="yellow"></div>
+  </div>
+
+  <button id="startBtn" class="button">▶️ Start Game</button>
+  <br>
+  <a href="index.html" class="button">🏠 Back to Arcade</a>
+
+  <script>
+    const pads = ['red', 'green', 'blue', 'yellow'];
+    let sequence = [];
+    let playerSequence = [];
+    let level = 1;
+    let highScore = localStorage.getItem('simonHighScore') || 1;
+    let waitingForInput = false;
+
+    const sounds = {
+  red: new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg'),
+  green: new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg'),
+  blue: new Audio('https://actions.google.com/sounds/v1/cartoon/woodpecker.ogg'),
+  yellow: new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg')
+};
+
+    const levelDisplay = document.getElementById('level');
+    const highScoreDisplay = document.getElementById('highScore');
+    const startBtn = document.getElementById('startBtn');
+
+    highScoreDisplay.textContent = 'High Score: ' + highScore;
+
+    function flashPad(padId) {
+      const pad = document.getElementById(padId);
+      pad.classList.add('active');
+      sounds[padId].currentTime = 0;
+      sounds[padId].play();
+      setTimeout(() => pad.classList.remove('active'), 500);
+    }
+
+    function playSequence() {
+      waitingForInput = false;
+      playerSequence = [];
+      let delay = 700;
+
+      sequence.forEach((padId, index) => {
+        setTimeout(() => {
+          flashPad(padId);
+        }, delay * (index + 1));
+      });
+
+      setTimeout(() => waitingForInput = true, delay * sequence.length + 200);
+    }
+
+    function nextLevel() {
+      level++;
+      levelDisplay.textContent = 'Level: ' + level;
+      if (level > highScore) {
+        highScore = level;
+        localStorage.setItem('simonHighScore', highScore);
+        highScoreDisplay.textContent = 'High Score: ' + highScore;
+      }
+      const nextPad = pads[Math.floor(Math.random() * pads.length)];
+      sequence.push(nextPad);
+      playSequence();
+    }
+
+    function startGame() {
+      level = 1;
+      sequence = [];
+      levelDisplay.textContent = 'Level: ' + level;
+      const firstPad = pads[Math.floor(Math.random() * pads.length)];
+      sequence.push(firstPad);
+      playSequence();
+    }
+
+    function handlePadClick(padId) {
+      if (!waitingForInput) return;
+
+      flashPad(padId);
+      playerSequence.push(padId);
+
+      const currentStep = playerSequence.length - 1;
+      if (playerSequence[currentStep] !== sequence[currentStep]) {
+        alert('Wrong pad! Game Over. Reached Level: ' + level);
+        return;
+      }
+
+      if (playerSequence.length === sequence.length) {
+        waitingForInput = false;
+        setTimeout(nextLevel, 1000);
+      }
+    }
+
+    pads.forEach(padId => {
+      document.getElementById(padId).addEventListener('click', () => handlePadClick(padId));
+    });
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Number Order</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #e0f7fa;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1em;
+      z-index: 10;
+    }
+
+    #round {
+      font-size: 1.4em;
+      margin-top: 45px;
+      color: #004d40;
+    }
+
+    #tiles {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .tile {
+      background: #00796b;
+      color: white;
+      font-size: 1.2em;
+      padding: 10px;
+      border-radius: 10px;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    .tile:active {
+      transform: scale(0.95);
+      background: #004d40;
+    }
+
+    #timerBar {
+      width: 100%;
+      height: 8px;
+      background: #cfd8dc;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    #timer {
+      height: 100%;
+      background: #d32f2f;
+      width: 100%;
+      transition: width 0.1s linear;
+    }
+
+    .back-button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .back-button:hover {
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  ❤️ Lives: <span id="lives">5</span><br>
+  🏆 Score: <span id="score">0</span><br>
+  🧠 High Score: <span id="high">0</span>
+</div>
+
+<div id="timerBar"><div id="timer"></div></div>
+<div id="round">Round 1</div>
+<div id="tiles"></div>
+
+<a href="index.html" class="back-button">🏠 Back to Arcade</a>
+
+<script>
+  const tilesContainer = document.getElementById('tiles');
+  const roundText = document.getElementById('round');
+  const timerBar = document.getElementById('timer');
+
+  let lives = 5;
+  let score = 0;
+  let round = 1;
+  let tileCount = 4;
+  let currentSequence = [];
+  let expectedIndex = 0;
+  let timerInterval;
+
+  let high = parseInt(localStorage.getItem('numberOrderHigh')) || 0;
+  document.getElementById('high').innerText = high;
+
+  function updateUI() {
+    document.getElementById('lives').innerText = lives;
+    document.getElementById('score').innerText = score;
+    document.getElementById('high').innerText = Math.max(score, high);
+    roundText.innerText = `Round ${round}`;
+  }
+
+  function generateUniqueNumbers(count, min = 0, max = 100) {
+    const nums = new Set();
+    while (nums.size < count) {
+      nums.add(Math.floor(Math.random() * (max - min + 1)) + min);
+    }
+    return Array.from(nums);
+  }
+
+  function startTimer(duration = 10) {
+    clearInterval(timerInterval);
+    let remaining = duration;
+    timerBar.style.width = '100%';
+
+    timerInterval = setInterval(() => {
+      remaining -= 0.1;
+      timerBar.style.width = (remaining / duration * 100) + '%';
+
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        lives--;
+        updateUI();
+        if (lives <= 0) return gameOver();
+        setTimeout(startRound, 500);
+      }
+    }, 100);
+  }
+
+  function startRound() {
+    if (lives <= 0) return gameOver();
+
+    tilesContainer.innerHTML = '';
+    updateUI();
+    currentSequence = generateUniqueNumbers(tileCount);
+    const sorted = [...currentSequence].sort((a, b) => a - b);
+    expectedIndex = 0;
+
+    currentSequence.forEach(num => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.innerText = num;
+      tile.dataset.value = num;
+
+      tile.addEventListener('touchstart', () => handleTap(num, tile, sorted));
+      tile.addEventListener('click', () => handleTap(num, tile, sorted));
+
+      tilesContainer.appendChild(tile);
+    });
+
+    startTimer(10);
+  }
+
+  function handleTap(num, tile, sorted) {
+    if (num === sorted[expectedIndex]) {
+      tile.style.visibility = 'hidden';
+      expectedIndex++;
+      score++;
+      updateUI();
+
+      if (expectedIndex === sorted.length) {
+        clearInterval(timerInterval);
+        round++;
+        tileCount = Math.min(25, tileCount + 1);
+        setTimeout(startRound, 300);
+      }
+    } else {
+      lives--;
+      updateUI();
+      if (lives <= 0) gameOver();
+    }
+  }
+
+  function gameOver() {
+    clearInterval(timerInterval);
+    tilesContainer.innerHTML = '';
+    roundText.innerText = `Game Over! Score: ${score}`;
+    if (score > high) {
+      localStorage.setItem('numberOrderHigh', score);
+    }
+    setTimeout(() => location.reload(), 3000);
+  }
+
+  updateUI();
+  startRound();
+</script>
+
+</body>
+</html>

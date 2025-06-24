@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Piano Tiles</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #111;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #000;
+    }
+    #score {
+      color: white;
+      text-align: center;
+      font-size: 1.2em;
+      padding: 10px;
+    }
+    .back-button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">🎼 Score: 0 | High Score: 0</div>
+  <canvas id="game" width="300" height="500"></canvas>
+  <a href="index.html" class="back-button">🏠 Back to Arcade</a>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const colCount = 4;
+    const tileWidth = canvas.width / colCount;
+    const tileHeight = 100;
+    let tiles = [];
+    let score = 0;
+    let speed = 1.5;
+    let gameOver = false;
+
+    let highScore = parseInt(localStorage.getItem('pianoHighScore')) || 0;
+
+    const sounds = [
+      new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
+      new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg'),
+      new Audio('https://actions.google.com/sounds/v1/cartoon/pop.ogg'),
+      new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg')
+    ];
+
+    function randomTile() {
+      return {
+        col: Math.floor(Math.random() * colCount),
+        y: -tileHeight
+      };
+    }
+
+    function drawTile(tile) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(tile.col * tileWidth, tile.y, tileWidth, tileHeight);
+    }
+
+    function resetGame() {
+      tiles = [randomTile()];
+      score = 0;
+      speed = 1.5;
+      gameOver = false;
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let tile of tiles) {
+        tile.y += speed;
+        drawTile(tile);
+      }
+
+      if (tiles.length > 0 && tiles[0].y > canvas.height) {
+        alert("Game Over! Score: " + score);
+        gameOver = true;
+        resetGame();
+        return;
+      }
+
+      if (tiles[tiles.length - 1].y > tileHeight / 2) {
+        tiles.push(randomTile());
+        if (speed < 6) speed += 0.05;
+      }
+
+      scoreDisplay.textContent = `🎼 Score: ${score} | High Score: ${highScore}`;
+      requestAnimationFrame(update);
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameOver) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        const tx = tile.col * tileWidth;
+        const ty = tile.y;
+
+        if (
+          x > tx &&
+          x < tx + tileWidth &&
+          y > ty &&
+          y < ty + tileHeight
+        ) {
+          tiles.splice(i, 1);
+          score++;
+
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('pianoHighScore', highScore);
+          }
+
+          const tone = score % 4;
+          try {
+            const soundClone = sounds[tone].cloneNode();
+            soundClone.play();
+          } catch (e) {
+            console.warn('Sound failed:', e);
+          }
+          return;
+        }
+      }
+
+      // Wrong tap
+      alert("Wrong tile! Score: " + score);
+      gameOver = true;
+      resetGame();
+    });
+
+    resetGame();
+    update();
+  </script>
+</body>
+</html>

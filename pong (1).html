@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pong Game</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #scoreboard {
+      margin-top: 10px;
+    }
+    .back-button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .back-button:hover {
+      background-color: #e91e63;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pong</h1>
+  <canvas id="gameCanvas" width="320" height="240"></canvas>
+
+  <div id="controls">
+    <button id="upBtn">⬆️</button>
+    <button id="downBtn">⬇️</button>
+  </div>
+
+  <div id="scoreboard">
+    <div>Score: <span id="score">0</span></div>
+    <div>High Score: <span id="highscore">0</span></div>
+  </div>
+
+  <a href="index.html" class="back-button">🏠 Back to Arcade</a>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const paddleWidth = 10;
+    const paddleHeight = 60;
+    let playerY = canvas.height / 2 - paddleHeight / 2;
+    let aiY = canvas.height / 2 - paddleHeight / 2;
+
+    const ballSize = 10;
+    let ballX = canvas.width / 2 - ballSize / 2;
+    let ballY = canvas.height / 2 - ballSize / 2;
+    let initialSpeed = 2;
+    let ballSpeedX = initialSpeed;
+    let ballSpeedY = initialSpeed;
+
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem("pongHighScore")) || 0;
+    document.getElementById("highscore").innerText = highScore;
+
+    let upPressed = false;
+    let downPressed = false;
+
+    document.getElementById("upBtn").addEventListener("touchstart", () => upPressed = true);
+    document.getElementById("upBtn").addEventListener("touchend", () => upPressed = false);
+    document.getElementById("downBtn").addEventListener("touchstart", () => downPressed = true);
+    document.getElementById("downBtn").addEventListener("touchend", () => downPressed = false);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp") upPressed = true;
+      if (e.key === "ArrowDown") downPressed = true;
+    });
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowUp") upPressed = false;
+      if (e.key === "ArrowDown") downPressed = false;
+    });
+
+    function resetBall(aiMiss = false) {
+      ballX = canvas.width / 2 - ballSize / 2;
+      ballY = canvas.height / 2 - ballSize / 2;
+      initialSpeed = 2;
+      ballSpeedX = initialSpeed * (Math.random() > 0.5 ? 1 : -1);
+      ballSpeedY = initialSpeed * (Math.random() > 0.5 ? 1 : -1);
+      if (!aiMiss) score = 0;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, playerY, paddleWidth, paddleHeight);
+      ctx.fillRect(canvas.width - paddleWidth, aiY, paddleWidth, paddleHeight);
+      ctx.fillRect(ballX, ballY, ballSize, ballSize);
+      document.getElementById("score").innerText = score;
+      document.getElementById("highscore").innerText = highScore;
+    }
+
+    function update() {
+      if (upPressed) playerY -= 5;
+      if (downPressed) playerY += 5;
+
+      if (playerY < 0) playerY = 0;
+      if (playerY + paddleHeight > canvas.height) playerY = canvas.height - paddleHeight;
+
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      if (ballY <= 0 || ballY + ballSize >= canvas.height) ballSpeedY *= -1;
+
+      if (
+        ballX <= paddleWidth &&
+        ballY + ballSize >= playerY &&
+        ballY <= playerY + paddleHeight
+      ) {
+        ballSpeedX *= -1;
+        ballX = paddleWidth;
+        score++;
+        ballSpeedX *= 1.05;
+        ballSpeedY *= 1.05;
+
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem("pongHighScore", highScore);
+        }
+      }
+
+      if (
+        ballX + ballSize >= canvas.width - paddleWidth &&
+        ballY + ballSize >= aiY &&
+        ballY <= aiY + paddleHeight
+      ) {
+        ballSpeedX *= -1;
+        ballX = canvas.width - paddleWidth - ballSize;
+      }
+
+      if (ballX < 0) {
+        resetBall();
+      }
+
+      if (ballX > canvas.width) {
+        resetBall(true);
+      }
+
+      const aiCenter = aiY + paddleHeight / 2;
+      if (aiCenter < ballY) aiY += 2;
+      else if (aiCenter > ballY) aiY -= 2;
+
+      if (aiY < 0) aiY = 0;
+      if (aiY + paddleHeight > canvas.height) aiY = canvas.height - paddleHeight;
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
