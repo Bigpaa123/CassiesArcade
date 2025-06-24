@@ -1,0 +1,94 @@
+<!-- BIG JOE'S ARCADE - index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Big Joe's Arcade</title>
+  <style>
+    body {
+      background: radial-gradient(circle, #0f0f0f, #000000);
+      color: #ffffff;
+      font-family: 'Press Start 2P', Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      color: #00ffcc;
+      font-size: 42px;
+      margin-top: 60px;
+      animation: bounce 1.5s infinite alternate;
+      text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+    }
+
+    p {
+      font-size: 20px;
+      margin-bottom: 40px;
+      color: #cccccc;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      animation-delay: 0.5s;
+    }
+
+    .game-button {
+      display: inline-block;
+      background-color: #ff4081;
+      color: white;
+      padding: 15px 30px;
+      margin: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 20px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 0 10px #ff4081, 0 0 20px #ff4081 inset;
+      transform: scale(0);
+      animation: slideIn 0.7s forwards;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .game-button:hover {
+      box-shadow: 0 0 20px #e91e63, 0 0 30px #e91e63 inset;
+      transform: scale(1.05);
+    }
+
+    .game-button:nth-child(3) { animation-delay: 1s; }
+    .game-button:nth-child(4) { animation-delay: 1.3s; }
+    .game-button:nth-child(5) { animation-delay: 1.6s; }
+    .game-button:nth-child(6) { animation-delay: 1.9s; }
+    .game-button:nth-child(7) { animation-delay: 2.2s; }
+    .game-button:nth-child(8) { animation-delay: 2.5s; }
+    .game-button:nth-child(9) { animation-delay: 2.8s; }
+
+    @keyframes bounce {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-10px); }
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      to { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 Big Joe's Arcade 🎮</h1>
+  <p>Touch to play. No internet needed!</p>
+
+  <a href="snake.html" class="game-button">🐍 Play Snake</a>
+  <a href="simon.html" class="game-button">🧠 Simon Says</a>
+  <a href="pong.html" class="game-button">🏓 Play Pong</a>
+  <a href="piano.html" class="game-button">🎹 Play Piano Tiles</a>
+  <a href="bubblepop.html" class="game-button">🫧 Play Bubble Pop</a>
+  <a href="numberorder.html" class="game-button">🔢 Play Number Order</a>
+  <a href="tetris.html" class="game-button">🧩 Play Tetris</a>
+
+</body>
+</html>
